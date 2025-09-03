@@ -18,6 +18,7 @@ class PetugasSeeder extends Seeder
             'nama_petugas' => 'Petugas 1',
             'username' => 'petugas',
             'password' => Hash::make('petugas123'),
+            'tanggal_lahir' => '2000-01-01',
         ]);
     }
 }

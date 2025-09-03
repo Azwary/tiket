@@ -94,12 +94,11 @@
                     <input type="hidden" name="tanggal" value="{{ request('tanggal') }}">
 
 
-                    <div class="mb-4">
-                        <label for="nama" class="block text-sm font-medium text-gray-700 mb-1">Nama Penumpang</label>
-                        <input type="text" id="nama" name="nama"
-                            class="w-full border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            required />
+                    <div class="mb-4" id="nama-penumpang-container">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Penumpang</label>
+                        <!-- Input dinamis akan muncul di sini -->
                     </div>
+
 
                     <div class="flex justify-center mb-6">
                         <div class="grid grid-cols-4 gap-4">
@@ -149,7 +148,17 @@
                             @endforeach
                         </div>
                     </div>
-
+                    @php
+                        $hargaRute = 0;
+                        if ($sudahPilih && request('rute')) {
+                            $selectedRute = collect($rutes)->firstWhere('id_rute', request('rute'));
+                            $hargaRute = $selectedRute->harga ?? 0;
+                        }
+                    @endphp
+                    <div class="mt-4 text-center">
+                        <span class="font-semibold text-lg">Total Bayar: Rp</span>
+                        <span id="total-bayar">0</span>
+                    </div>
                     <button type="submit"
                         class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md text-sm transition"
                         {{ !$sudahPilih ? 'disabled class=cursor-not-allowed opacity-50' : '' }}>
@@ -160,8 +169,35 @@
         </div>
     </div>
     <script>
+        const hargaRute = {{ $hargaRute }};
         document.addEventListener('DOMContentLoaded', function() {
             const checkboxes = document.querySelectorAll('input[type="checkbox"][name="kursi[]"]');
+            const totalBayarEl = document.getElementById('total-bayar');
+            const namaContainer = document.getElementById('nama-penumpang-container');
+
+            function updateTotalBayar() {
+                let total = 0;
+                checkboxes.forEach(checkbox => {
+                    if (checkbox.checked) total += hargaRute;
+                });
+                totalBayarEl.textContent = total.toLocaleString('id-ID');
+            }
+
+            function updateNamaInputs() {
+                namaContainer.innerHTML =
+                    '<label class="block text-sm font-medium text-gray-700 mb-1">Nama Penumpang</label>';
+                checkboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        const seatNo = checkbox.value;
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.name = `nama[${seatNo}]`;
+                        input.placeholder = `Nama untuk kursi ${seatNo}`;
+                        input.className = 'w-full border rounded-md px-4 py-2 mb-2';
+                        namaContainer.appendChild(input);
+                    }
+                });
+            }
 
             checkboxes.forEach(function(checkbox) {
                 const box = checkbox.closest('label').querySelector('.seat-box');
@@ -172,6 +208,7 @@
                     box.classList.add('bg-red-600');
                 }
 
+                // Update warna, total, dan input nama saat checkbox berubah
                 checkbox.addEventListener('change', function() {
                     if (checkbox.checked) {
                         box.classList.remove('bg-blue-600', 'hover:bg-blue-700');
@@ -180,8 +217,15 @@
                         box.classList.remove('bg-red-600');
                         box.classList.add('bg-blue-600', 'hover:bg-blue-700');
                     }
+
+                    updateTotalBayar();
+                    updateNamaInputs();
                 });
             });
+
+            // Hitung awal jika ada yang sudah tercentang
+            updateTotalBayar();
+            updateNamaInputs();
         });
     </script>
 

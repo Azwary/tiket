@@ -11,9 +11,26 @@
             <div class="grid md:grid-cols-2 gap-6">
                 <div>
                     <h2 class="text-lg font-semibold mb-2">Informasi Penumpang</h2>
-                    <p><span class="font-medium">Nama:</span> {{ $data->pemesanan?->penumpang?->nama_penumpang ?? '-' }}</p>
+                    @php
+                        $penumpangs = $data->pemesanan?->detail_pemesanan ?? collect();
+                    @endphp
                     <p><span class="font-medium">No. Tiket:</span> {{ $data->pemesanan?->id_pemesanan ?? '-' }}</p>
+                    @if ($penumpangs->isNotEmpty())
+                        @foreach ($penumpangs as $index => $detail)
+                            <p>
+                                <span class="font-medium">Nama {{ $index + 1 }}:</span>
+                                {{ $detail->penumpang?->nama_penumpang ?? '-' }}
+                            </p>
+                            {{-- <p>
+                                <span class="font-medium">No. Tiket {{ $index + 1 }}:</span>
+                                {{ $detail->id_detail_pemesanan ?? ($data->pemesanan->id_pemesanan ?? '-') }}
+                            </p> --}}
+                        @endforeach
+                    @else
+                        <p>-</p>
+                    @endif
                 </div>
+
 
                 <div>
                     <h2 class="text-lg font-semibold mb-2">Waktu Keberangkatan</h2>

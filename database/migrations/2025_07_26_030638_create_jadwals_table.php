@@ -14,10 +14,25 @@ return new class extends Migration
         Schema::create('jadwal', function (Blueprint $table) {
             $table->id('id_jadwal');
             $table->unsignedBigInteger('id_rute');
+            $table->unsignedBigInteger('id_supir');
+            $table->unsignedBigInteger('id_kendaraan');
             $table->time('jam_keberangkatan');
             $table->timestamps();
 
-            $table->foreign('id_rute')->references('id_rute')->on('rute')->onDelete('cascade');
+            $table->foreign('id_rute')
+                ->references('id_rute')
+                ->on('rute')
+                ->onDelete('cascade');
+
+            $table->foreign('id_supir')
+                ->references('id_supir')
+                ->on('supir')
+                ->onDelete('cascade');
+
+            $table->foreign('id_kendaraan')
+                ->references('id_kendaraan')
+                ->on('kendaraan')
+                ->onDelete('cascade');
         });
     }
 

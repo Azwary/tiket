@@ -31,6 +31,8 @@ class PemesananController extends Controller
         $query = Pemesanan::with([
             'penumpang',
             'jadwal.rute',
+            'jadwal.supir',
+            'jadwal.kendaraan',
             'detail_pemesanan.kursi',
             'pembayaran'
         ])
@@ -62,6 +64,16 @@ class PemesananController extends Controller
         if ($request->filled('rute')) {
             $query->whereHas('jadwal', function ($q) use ($request) {
                 $q->where('id_rute', $request->rute);
+            });
+        }
+        if ($request->filled('supir')) {
+            $query->whereHas('jadwal', function ($q) use ($request) {
+                $q->where('id_supir', $request->supir);
+            });
+        }
+        if ($request->filled('kendaraan')) {
+            $query->whereHas('jadwal', function ($q) use ($request) {
+                $q->where('id_kendaraan', $request->kendaraan);
             });
         }
 
@@ -123,23 +135,26 @@ class PemesananController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama' => 'required|string|max:255',
             'id_jadwal' => 'required|exists:jadwal,id_jadwal',
             'tanggal' => 'required|date',
             'kursi' => 'required|array|min:1',
             'kursi.*' => 'exists:kursi,id_kursi',
+            'nama' => 'required|array',
+            'nama.*' => 'required|string|max:255',
         ]);
 
-        // 1. Simpan penumpang
-        $penumpang = Penumpang::create([
-            'nama_penumpang' => $request->nama,
-        ]);
+        // Ambil input sebagai array lokal
+        $kursiArray = $request->input('kursi');
+        $namaArray = $request->input('nama');
 
-        // 2. Ambil jadwal & harga
         $jadwal = Jadwal::with('rute')->findOrFail($request->id_jadwal);
         $harga = $jadwal->rute->harga ?? 0;
 
-        // 3. Simpan pemesanan
+        // Buat pemesanan utama berdasarkan penumpang pertama
+        $firstSeat = reset($kursiArray);
+        $firstName = $namaArray[$firstSeat];
+        $penumpang = Penumpang::create(['nama_penumpang' => $firstName]);
+
         $pemesanan = Pemesanan::create([
             'id_penumpang' => $penumpang->id,
             'id_jadwal' => $jadwal->id_jadwal,
@@ -147,19 +162,20 @@ class PemesananController extends Controller
             'tanggal_keberangkatan' => $request->tanggal,
         ]);
 
-        // 4. Simpan semua detail pemesanan kursi
-        foreach ($request->kursi as $id_kursi) {
+        // Simpan semua detail kursi & nama penumpang
+        foreach ($kursiArray as $seat) {
+            $namaSeat = $namaArray[$seat];
+            $penumpangSeat = Penumpang::create(['nama_penumpang' => $namaSeat]);
+
             DetailPemesanan::create([
                 'id_pemesanan' => $pemesanan->id_pemesanan,
-                'id_penumpang' => $penumpang->id,
-                'id_kursi' => $id_kursi,
+                'id_penumpang' => $penumpangSeat->id,
+                'id_kursi' => Kursi::where('no_kursi', $seat)->first()->id_kursi,
             ]);
         }
 
-        // 5. Hitung total harga
-        $total_pembayaran = $harga * count($request->kursi);
-
-        // 6. Simpan data pembayaran
+        // Hitung total bayar
+        $total_pembayaran = $harga * count($kursiArray);
         Pembayaran::create([
             'id_pemesanan' => $pemesanan->id_pemesanan,
             'jumlah_pembayaran' => $total_pembayaran,
@@ -205,7 +221,7 @@ class PemesananController extends Controller
 
         $rutes = Rute::all();
 
-        // Ambil rute saat ini
+        // Ambil rute saat inia
         $id_rute = old('id_rute', $pemesanan->jadwal->rute->id_rute ?? null);
 
         // Filter jadwal berdasarkan rute yang aktif
@@ -221,79 +237,62 @@ class PemesananController extends Controller
     {
         $request->validate([
             'id_rute' => 'required|exists:rute,id_rute',
-            'nama' => 'required|string|max:255',
-            'kursi' => 'required|array|min:1',
-            'kursi.*' => 'exists:kursi,no_kursi',
             'id_jadwal' => 'required|exists:jadwal,id_jadwal',
             'tanggal' => 'required|date',
+            'kursi' => 'required|array|min:1',
+            'kursi.*' => 'exists:kursi,no_kursi',
+            'nama' => 'required|array',
+            'nama.*' => 'required|string|max:255',
         ]);
 
-        // Validasi awal: pastikan id_jadwal memang milik id_rute
+        // Ambil input sebagai array lokal
+        $kursiArray = $request->input('kursi');
+        $namaArray = $request->input('nama');
+
         $valid = Jadwal::where('id_jadwal', $request->id_jadwal)
             ->where('id_rute', $request->id_rute)
             ->exists();
 
-        if (!$valid) {
-            return back()->withErrors(['id_jadwal' => 'Jadwal tidak sesuai dengan rute yang dipilih.']);
-        }
+        if (!$valid) return back()->withErrors(['id_jadwal' => 'Jadwal tidak sesuai dengan rute yang dipilih.']);
 
-        $result = DB::transaction(function () use ($request, $id) {
-            $pemesanan = Pemesanan::with('penumpang')->findOrFail($id);
+        DB::transaction(function () use ($request, $id, $kursiArray, $namaArray) {
+            $pemesanan = Pemesanan::with('detail_pemesanan.penumpang')->findOrFail($id);
 
-            // Update nama penumpang
-            $pemesanan->penumpang->update([
-                'nama_penumpang' => $request->nama,
-            ]);
+            // Hapus detail lama & penumpang lama
+            foreach ($pemesanan->detail_pemesanan as $detail) {
+                $detail->penumpang->delete();
+                $detail->delete();
+            }
 
-            // Update data pemesanan
+            // Update pemesanan utama
             $pemesanan->update([
                 'id_jadwal' => $request->id_jadwal,
                 'tanggal_keberangkatan' => $request->tanggal,
             ]);
 
-            // Hapus detail kursi lama
-            DetailPemesanan::where('id_pemesanan', $pemesanan->id_pemesanan)->delete();
+            // Ambil ID kursi
+            $kursis = Kursi::whereIn('no_kursi', $kursiArray)->pluck('id_kursi', 'no_kursi');
 
-            // Ambil id_kursi dari no_kursi
-            $kursis = Kursi::whereIn('no_kursi', $request->kursi)->pluck('id_kursi', 'no_kursi');
-
-            foreach ($request->kursi as $no_kursi) {
-                $id_kursi = $kursis[$no_kursi] ?? null;
-                if ($id_kursi) {
-                    DetailPemesanan::create([
-                        'id_pemesanan' => $pemesanan->id_pemesanan,
-                        'id_penumpang' => $pemesanan->id_penumpang,
-                        'id_kursi' => $id_kursi,
-                    ]);
-                }
+            // Simpan detail pemesanan baru
+            foreach ($kursiArray as $seatNo) {
+                $penumpang = Penumpang::create(['nama_penumpang' => $namaArray[$seatNo]]);
+                DetailPemesanan::create([
+                    'id_pemesanan' => $pemesanan->id_pemesanan,
+                    'id_penumpang' => $penumpang->id,
+                    'id_kursi' => $kursis[$seatNo],
+                ]);
             }
 
-            // Hitung ulang total harga berdasarkan rute baru
-            $jadwalBaru = Jadwal::with('rute')->findOrFail($request->id_jadwal);
-            $harga = $jadwalBaru->rute->harga ?? 0;
-            $total = $harga * count($request->kursi);
-
-            // Update atau buat data pembayaran
+            // Update total pembayaran
+            $harga = Jadwal::find($request->id_jadwal)->rute->harga ?? 0;
             Pembayaran::updateOrCreate(
                 ['id_pemesanan' => $pemesanan->id_pemesanan],
-                ['jumlah_pembayaran' => $total]
+                ['jumlah_pembayaran' => $harga * count($kursiArray)]
             );
-
-            // Kembalikan hasil debug
-            // return [
-            //     'request' => $request->all(),
-            //     'kursis' => $kursis,
-            //     'total_harga' => $total,
-            // ];
         });
-
-        // Dump hasil proses
-        // dd($result);
 
         return redirect()->route('pemesanan.index')->with('success', 'Pemesanan berhasil diperbarui.');
     }
-
-
     public function getByRute($id_rute)
     {
         $jadwals = Jadwal::where('id_rute', $id_rute)->get();

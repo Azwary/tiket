@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('nama_petugas', 50);
             $table->string('username', 30)->unique();
             $table->string('password', 255);
+            $table->date('tanggal_lahir');
             $table->timestamps();
         });
     }

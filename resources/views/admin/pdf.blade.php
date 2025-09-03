@@ -66,13 +66,15 @@
             Semua rute
         @endif
     </p>
-    <p><strong>Priode:</strong>
-        @if ($bulan)
-            {{ Carbon::parse($bulan)->translatedFormat('F Y') }}
+    <p><strong>Periode:</strong>
+        @if ($dari_tanggal && $sampai_tanggal)
+            {{ \Carbon\Carbon::parse($dari_tanggal)->format('d-m-Y') }} s/d
+            {{ \Carbon\Carbon::parse($sampai_tanggal)->format('d-m-Y') }}
         @else
-            Semua Bulan
+            Semua Periode
         @endif
     </p>
+
 
     <table>
         <thead>

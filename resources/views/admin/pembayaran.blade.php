@@ -45,8 +45,19 @@
                         @forelse ($pembayaran as $index => $item)
                             <tr class="text-center {{ $index % 2 == 0 ? 'bg-white' : 'bg-gray-50' }}">
                                 <td class="px-4 py-2 border">{{ $index + 1 }}</td>
-                                <td class="px-4 py-2 border">
-                                    {{ optional($item->pemesanan?->penumpang)->nama_penumpang ?? '-' }}</td>
+                                <td class="px-4 py-2 border text-left">
+                                    @php
+                                        $penumpangs = $item->pemesanan?->detail_pemesanan ?? collect();
+                                    @endphp
+
+                                    @if ($penumpangs->isNotEmpty())
+                                        {{ $penumpangs->map(fn($detail) => $detail->penumpang?->nama_penumpang ?? '-')->join(', ') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+
+
                                 <td class="px-4 py-2 border"> {{ optional($item->pemesanan)->tanggal_pemesanan ?? '-' }}
                                 </td>
                                 @php

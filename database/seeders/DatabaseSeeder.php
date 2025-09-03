@@ -19,9 +19,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminSeeder::class,
             PetugasSeeder::class,
+            supirs::class,
+            kendaraans::class,
             // PenumpangSeeder::class,
             rutes::class,
-            jadwals::class,
+            JadwalsSeeder::class,
             kursis::class,
         ]);
         // User::create([

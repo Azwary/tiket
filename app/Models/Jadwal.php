@@ -14,6 +14,8 @@ class Jadwal extends Model
 
     protected $fillable = [
         'id_rute',
+        'id_supir',
+        'id_kendaraan',
         'jam_keberangkatan',
     ];
 
@@ -25,5 +27,14 @@ class Jadwal extends Model
     public function rute()
     {
         return $this->belongsTo(Rute::class, 'id_rute', 'id_rute');
+    }
+    public function supir()
+    {
+        return $this->belongsTo(Supir::class, 'id_supir', 'id_supir');
+    }
+
+    public function kendaraan()
+    {
+        return $this->belongsTo(Kendaraan::class, 'id_kendaraan', 'id_kendaraan');
     }
 }
