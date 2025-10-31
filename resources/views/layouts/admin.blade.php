@@ -72,14 +72,12 @@
                     </a>
                 </li>
 
-
-
                 <li>
                     <a href="{{ route('pemesanan.index') }}"
                         class="flex items-center gap-2 px-4 py-2 rounded w-full
                                  {{ request()->routeIs('pemesanan.*') ? 'bg-gray-200 font-semibold text-indigo-600' : 'hover:bg-gray-200' }}">
                         <i data-lucide="ticket" class="w-5 h-5"></i>
-                        Pemesanan Tiket
+                        Data penjualan tiket
                     </a>
                 </li>
 
@@ -88,7 +86,7 @@
                         class="flex items-center gap-2 px-4 py-2 rounded w-full
                                 {{ request()->routeIs('pembayaran.*') ? 'bg-gray-200 font-semibold text-indigo-600' : 'hover:bg-gray-200' }}">
                         <i data-lucide="badge-check" class="w-5 h-5"></i>
-                        Konfirmasi Pembayaran
+                        Transaksi Online
                     </a>
                 </li>
                 <li>
@@ -99,24 +97,7 @@
                         Laporan
                     </a>
                 </li>
-                <li>
-                    <a href="{{ route('users.index') }}"
-                        class="flex items-center gap-2 px-4 py-2 rounded w-full
-                            {{ request()->routeIs('Users.*') ? 'bg-gray-200 font-semibold text-indigo-600' : 'hover:bg-gray-200' }}">
-                        <i data-lucide="user" class="w-5 h-5"></i>
-                        Users
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('supir.index') }}"
-                        class="flex items-center gap-2 px-4 py-2 rounded w-full
-                            {{ request()->routeIs('Users.*') ? 'bg-gray-200 font-semibold text-indigo-600' : 'hover:bg-gray-200' }}">
-                        <i data-lucide="car-taxi-front" class="w-5 h-5"></i>
-                        Supirs
-                    </a>
-                </li>
-                {{-- Cek jika bukan admin --}}
-                {{-- @if (Auth::guard('admin')->user()->role == 'umum')
+                @if (Auth::guard('admin')->user()->role == 'umum')
                     <li>
                         <a href="{{ route('users.index') }}"
                             class="flex items-center gap-2 px-4 py-2 rounded w-full
@@ -125,7 +106,16 @@
                             Users
                         </a>
                     </li>
-                @endif --}}
+
+                    <li>
+                        <a href="{{ route('supir.index') }}"
+                            class="flex items-center gap-2 px-4 py-2 rounded w-full
+                            {{ request()->routeIs('Users.*') ? 'bg-gray-200 font-semibold text-indigo-600' : 'hover:bg-gray-200' }}">
+                            <i data-lucide="car-taxi-front" class="w-5 h-5"></i>
+                            Supirs
+                        </a>
+                    </li>
+                @endif
             </ul>
         </aside>
 
@@ -149,14 +139,14 @@
                     <a href="{{ route('pemesanan.index') }}"
                         class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 w-full">
                         <i data-lucide="ticket" class="w-5 h-5"></i>
-                        Pemesanan Tiket
+                        Rekap pemesanan tiket/ data penjualan tiket
                     </a>
                 </li>
                 <li>
                     <a href="{{ route('pembayaran.index') }}"
                         class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 w-full">
                         <i data-lucide="badge-check" class="w-5 h-5"></i>
-                        Konfirmasi Pembayaran
+                        Konfirmasi pembayarn online/ Transaksi Online
                     </a>
                 </li>
                 <li>
@@ -378,7 +368,6 @@
         });
     </script>
 
-    {{-- Stack untuk script tambahan dari child --}}
     @stack('scripts')
 </body>
 
