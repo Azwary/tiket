@@ -39,5 +39,4 @@ class Pemesanan extends Model
     {
         return $this->belongsTo(Rute::class, 'id_rute');
     }
-    
 }

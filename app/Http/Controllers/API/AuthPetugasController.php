@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthPetugasController extends Controller
 {
-    // Login Petugas
     public function login(Request $request)
     {
         $request->validate([
@@ -23,7 +22,7 @@ class AuthPetugasController extends Controller
         if (!$petugas || !Hash::check($request->password, $petugas->password)) {
             return response()->json([
                 'status' => false,
-                'message' => 'Username atau password salah'
+                'message' => 'username atau password salah'
             ], 401);
         }
 

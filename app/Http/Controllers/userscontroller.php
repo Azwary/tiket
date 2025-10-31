@@ -15,8 +15,8 @@ class userscontroller extends Controller
         $admins = Admin::where('role', '!=', 'umum')->get();
         $petugas = Petugas::all();
         $penumpang = Penumpang::whereNotNull('username')
-                            ->where('username', '!=', '')
-                            ->get();
+            ->where('username', '!=', '')
+            ->get();
 
         return view('admin.users', [
             'admins' => $admins,
@@ -37,6 +37,7 @@ class userscontroller extends Controller
             // Tambah admin
             $request->validate([
                 'nama_admin' => 'required|max:50',
+                'tanggal_lahir' => 'required|max:30|unique:admin,tanggal_lahir',
                 'username' => 'required|max:30|unique:admin,username',
                 'password' => 'required|min:6',
                 'role' => 'required|in:padang,solok,sawah_lunto',
@@ -45,6 +46,7 @@ class userscontroller extends Controller
             Admin::create([
                 'nama_admin' => $request->nama_admin,
                 'username' => $request->username,
+                'tanggal_lahir' => $request->tanggal_lahir,
                 'password' => Hash::make($request->password),
                 'role' => $request->role,
             ]);

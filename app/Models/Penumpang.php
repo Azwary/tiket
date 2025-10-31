@@ -14,6 +14,7 @@ class Penumpang extends Authenticatable
     protected $fillable = [
         'nama_penumpang',
         'no_telepon',
+        'email',
         'username',
         'password',
     ];

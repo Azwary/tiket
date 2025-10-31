@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nama_penumpang', 50);
             $table->string('no_telepon', 15)->nullable();
+            $table->string('email', 50)->nullable();
             $table->string('username', 50)->nullable();
             $table->string('password', 255)->nullable();
             $table->timestamps();

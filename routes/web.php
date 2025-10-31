@@ -8,7 +8,7 @@ use App\Http\Controllers\Auth\PetugasLoginController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PemesananController;
-use App\Http\Controllers\supirscontroller;
+use App\Http\Controllers\SupirsController;
 use App\Http\Controllers\userscontroller;
 use Illuminate\Support\Facades\Route;
 
@@ -41,13 +41,13 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::resource('pembayaran', PembayaranController::class);
     Route::resource('laporan', LaporanController::class)->except(['show']);
     Route::resource('users', userscontroller::class);
-    Route::resource('supir', supirscontroller::class);
+    Route::resource('supir', SupirsController::class);
     // Jadwal
-    Route::get('jadwal', [supirscontroller::class, 'jadwalIndex'])->name('supir.jadwal');
-    Route::post('jadwal', [supirscontroller::class, 'jadwalStore'])->name('supir.jadwal.store');
-    Route::get('jadwal/{id}/edit', [supirscontroller::class, 'jadwalEdit'])->name('supir.jadwal.edit');
-    Route::put('jadwal/{id}', [supirscontroller::class, 'jadwalUpdate'])->name('supir.jadwal.update');
-    Route::delete('jadwal/{id}', [supirscontroller::class, 'jadwalDestroy'])->name('supir.jadwal.destroy');
+    Route::get('jadwal', [SupirsController::class, 'jadwalIndex'])->name('supir.jadwal');
+    Route::post('jadwal', [SupirsController::class, 'jadwalStore'])->name('supir.jadwal.store');
+    Route::get('jadwal/{id}/edit', [SupirsController::class, 'jadwalEdit'])->name('supir.jadwal.edit');
+    Route::put('jadwal/{id}', [SupirsController::class, 'jadwalUpdate'])->name('supir.jadwal.update');
+    Route::delete('jadwal/{id}', [SupirsController::class, 'jadwalDestroy'])->name('supir.jadwal.destroy');
 
 
     Route::get('/get-jadwal-by-rute/{id_rute}', [PemesananController::class, 'getByRute']);
@@ -63,22 +63,4 @@ Route::middleware(['auth:admin'])->group(function () {
 });
 
 
-
-// // Petugas
-// Route::get('/petugas/login', [PetugasLoginController::class, 'showLoginForm']);
-// Route::post('/petugas/login', [PetugasLoginController::class, 'login']);
-// Route::post('/petugas/logout', [PetugasLoginController::class, 'logout']);
-// Route::get('/petugas/dashboard', function () {
-//     return 'Halaman Dashboard Petugas';
-// })->middleware('auth:petugas');
-
-// // Penumpang
-// Route::get('/penumpang/login', [PenumpangLoginController::class, 'showLoginForm']);
-// Route::post('/penumpang/login', [PenumpangLoginController::class, 'login']);
-// Route::post('/penumpang/logout', [PenumpangLoginController::class, 'logout']);
-// Route::get('/penumpang/dashboard', function () {
-//     return 'Halaman Dashboard Penumpang';
-// })->middleware('auth:penumpang');
-
-// ✅ Tetap aktifkan ini agar route bawaan Breeze tetap bekerja
 require __DIR__ . '/auth.php';

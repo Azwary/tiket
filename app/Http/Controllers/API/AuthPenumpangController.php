@@ -10,12 +10,12 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthPenumpangController extends Controller
 {
-    // Registrasi Penumpang
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'nama_penumpang' => 'required|string|max:255',
             'no_telepon' => 'required|string|max:20|unique:penumpang,no_telepon',
+            'email' => 'required|string|email|max:255|unique:penumpang,email',
             'username' => 'required|string|max:255|unique:penumpang,username',
             'password' => 'required|string|min:6',
         ]);
@@ -30,6 +30,7 @@ class AuthPenumpangController extends Controller
         $penumpang = Penumpang::create([
             'nama_penumpang' => $request->nama_penumpang,
             'no_telepon' => $request->no_telepon,
+            'email' => $request->email,
             'username' => $request->username,
             'password' => Hash::make($request->password),
         ]);
@@ -41,7 +42,6 @@ class AuthPenumpangController extends Controller
         ], 201);
     }
 
-    // Login Penumpang
     public function login(Request $request)
     {
         $request->validate([
@@ -58,7 +58,6 @@ class AuthPenumpangController extends Controller
             ], 401);
         }
 
-        // Token manual atau pasang Laravel Sanctum/Passport jika dibutuhkan
         return response()->json([
             'status' => true,
             'message' => 'Login berhasil',
@@ -71,6 +70,49 @@ class AuthPenumpangController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Logout berhasil'
+        ]);
+    }
+    public function updateProfile(Request $request, $id)
+    {
+        $penumpang = Penumpang::find($id);
+
+        if (!$penumpang) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Penumpang tidak ditemukan'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'nama_penumpang' => 'required|string|max:255',
+            'no_telepon' => 'required|string|max:20|unique:penumpang,no_telepon,' . $id,
+            'email' => 'required|string|email|max:255|unique:penumpang,email,' . $id,
+            'username' => 'required|string|max:255|unique:penumpang,username,' . $id,
+            'password' => 'nullable|string|min:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $penumpang->nama_penumpang = $request->nama_penumpang;
+        $penumpang->no_telepon = $request->no_telepon;
+        $penumpang->email = $request->email;
+        $penumpang->username = $request->username;
+
+        if ($request->password) {
+            $penumpang->password = Hash::make($request->password);
+        }
+
+        $penumpang->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Profil berhasil diperbarui',
+            'data' => $penumpang
         ]);
     }
 }

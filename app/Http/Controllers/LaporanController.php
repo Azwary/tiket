@@ -81,7 +81,7 @@ class LaporanController extends Controller
             $ruteTerpilih = Rute::find($request->rute);
         }
 
-        // Filter rentang tanggal (sama seperti di index)
+        // Filter rentang tanggal
         if ($request->filled('dari_tanggal') && $request->filled('sampai_tanggal')) {
             $query->whereBetween('tanggal_keberangkatan', [
                 $request->dari_tanggal,
@@ -89,10 +89,10 @@ class LaporanController extends Controller
             ]);
         }
 
-        $data = $query->get();
+        $pemesanans = $query->get(); // ganti dari $data ke $pemesanans supaya konsisten
 
         return Pdf::loadView('admin.pdf', [
-            'data' => $data,
+            'pemesanans' => $pemesanans,
             'dari_tanggal' => $request->dari_tanggal,
             'sampai_tanggal' => $request->sampai_tanggal,
             'rute_terpilih' => $ruteTerpilih,

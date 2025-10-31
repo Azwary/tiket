@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\supir;
+use App\Models\Supir;
 
 class supirs extends Seeder
 {
@@ -13,22 +13,22 @@ class supirs extends Seeder
      */
     public function run(): void
     {
-        supir::create([
+        Supir::create([
             'nama_supir' => 'Budi Santoso',
             'no_hp' => '081234567890',
             'status' => 'Aktif',
         ]);
-        supir::create([
+        Supir::create([
             'nama_supir' => 'Andi Wijaya',
             'no_hp' => '081234567891',
             'status' => 'Aktif',
         ]);
-        supir::create([
+        Supir::create([
             'nama_supir' => 'Slamet Riyadi',
             'no_hp' => '081234567892',
             'status' => 'Aktif',
         ]);
-        supir::create([
+        Supir::create([
             'nama_supir' => 'ajo maman',
             'no_hp' => '081234567893',
             'status' => 'Aktif',

@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\kendaraan;
+use App\Models\Kendaraan;
 
 class kendaraans extends Seeder
 {
@@ -13,22 +13,22 @@ class kendaraans extends Seeder
      */
     public function run(): void
     {
-        kendaraan::create([
+        Kendaraan::create([
             'plat_nomor' => 'B 1234 ABC',
             'id_supir' => '1',
             'status' => 'Tersedia',
         ]);
-        kendaraan::create([
+        Kendaraan::create([
             'plat_nomor' => 'B 1232 ABC',
             'id_supir' => '2',
             'status' => 'Tersedia',
         ]);
-        kendaraan::create([
+        Kendaraan::create([
             'plat_nomor' => 'B 1231 ABC',
             'id_supir' => '3',
             'status' => 'Tersedia',
         ]);
-        kendaraan::create([
+        Kendaraan::create([
             'plat_nomor' => 'B 1334 ABC',
             'id_supir' => '4',
             'status' => 'Tidek Tersedia',

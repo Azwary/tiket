@@ -17,6 +17,7 @@ class PenumpangSeeder extends Seeder
         Penumpang::create([
             'nama_penumpang' => 'Penumpang 1',
             'no_telepon' => '081234567890',
+            'email' => 'penumpang@gmail.com',
             'username' => 'penumpang',
             'password' => Hash::make('penumpang123'),
         ]);

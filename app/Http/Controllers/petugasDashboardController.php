@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 
 class petugasDashboardController extends Controller
 {
-        public function index()
+    public function index()
     {
         // Contoh: ambil total tiket terjual dari tabel `tiket`
         $totalTiketTerjual = 12;
