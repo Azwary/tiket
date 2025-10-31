@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Auth\AdminLoginController;
 use App\Http\Controllers\Auth\PenumpangLoginController;
@@ -7,12 +8,28 @@ use App\Http\Controllers\Auth\PetugasLoginController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PemesananController;
+use App\Http\Controllers\supirscontroller;
 use App\Http\Controllers\userscontroller;
 use Illuminate\Support\Facades\Route;
 
 
 // routes/web.php
 Route::get('/', fn() => redirect('/login'));
+
+// Form reset password
+Route::get('/admin/password/request', [AdminAuthController::class, 'showResetForm'])
+    ->name('admin.password.request');
+
+Route::post('/admin/password/request', [AdminAuthController::class, 'handleResetRequest'])
+    ->name('admin.password.request.post'); // <-- pastikan ini
+
+
+// Reset password setelah validasi tanggal lahir
+Route::get('/admin/password/reset/{username}', [AdminAuthController::class, 'showNewPasswordForm'])
+    ->name('admin.password.reset'); // <-- ini route custom
+
+Route::post('/admin/password/reset/{username}', [AdminAuthController::class, 'updatePassword'])
+    ->name('admin.password.update');
 
 // Admin
 Route::get('/admin/login', [AdminLoginController::class, 'showLoginForm'])->name('login.form');
@@ -24,6 +41,15 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::resource('pembayaran', PembayaranController::class);
     Route::resource('laporan', LaporanController::class)->except(['show']);
     Route::resource('users', userscontroller::class);
+    Route::resource('supir', supirscontroller::class);
+    // Jadwal
+    Route::get('jadwal', [supirscontroller::class, 'jadwalIndex'])->name('supir.jadwal');
+    Route::post('jadwal', [supirscontroller::class, 'jadwalStore'])->name('supir.jadwal.store');
+    Route::get('jadwal/{id}/edit', [supirscontroller::class, 'jadwalEdit'])->name('supir.jadwal.edit');
+    Route::put('jadwal/{id}', [supirscontroller::class, 'jadwalUpdate'])->name('supir.jadwal.update');
+    Route::delete('jadwal/{id}', [supirscontroller::class, 'jadwalDestroy'])->name('supir.jadwal.destroy');
+
+
     Route::get('/get-jadwal-by-rute/{id_rute}', [PemesananController::class, 'getByRute']);
 
     Route::get('/get-jadwal', [PemesananController::class, 'getJadwal'])->name('get.jadwal');
@@ -34,26 +60,25 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::get('/tampilkan-kursi', [PemesananController::class, 'tampilkanKursi'])->name('penumpang.tampilkanKursi');
     Route::post('/pembayaran/{id}/konfirmasi', [PembayaranController::class, 'konfirmasi'])->name('pembayaran.konfirmasi');
     Route::get('/laporan/unduh', [LaporanController::class, 'unduh'])->name('laporan.unduh');
-    
 });
 
 
 
-// Petugas
-Route::get('/petugas/login', [PetugasLoginController::class, 'showLoginForm']);
-Route::post('/petugas/login', [PetugasLoginController::class, 'login']);
-Route::post('/petugas/logout', [PetugasLoginController::class, 'logout']);
-Route::get('/petugas/dashboard', function () {
-    return 'Halaman Dashboard Petugas';
-})->middleware('auth:petugas');
+// // Petugas
+// Route::get('/petugas/login', [PetugasLoginController::class, 'showLoginForm']);
+// Route::post('/petugas/login', [PetugasLoginController::class, 'login']);
+// Route::post('/petugas/logout', [PetugasLoginController::class, 'logout']);
+// Route::get('/petugas/dashboard', function () {
+//     return 'Halaman Dashboard Petugas';
+// })->middleware('auth:petugas');
 
-// Penumpang
-Route::get('/penumpang/login', [PenumpangLoginController::class, 'showLoginForm']);
-Route::post('/penumpang/login', [PenumpangLoginController::class, 'login']);
-Route::post('/penumpang/logout', [PenumpangLoginController::class, 'logout']);
-Route::get('/penumpang/dashboard', function () {
-    return 'Halaman Dashboard Penumpang';
-})->middleware('auth:penumpang');
+// // Penumpang
+// Route::get('/penumpang/login', [PenumpangLoginController::class, 'showLoginForm']);
+// Route::post('/penumpang/login', [PenumpangLoginController::class, 'login']);
+// Route::post('/penumpang/logout', [PenumpangLoginController::class, 'logout']);
+// Route::get('/penumpang/dashboard', function () {
+//     return 'Halaman Dashboard Penumpang';
+// })->middleware('auth:penumpang');
 
 // ✅ Tetap aktifkan ini agar route bawaan Breeze tetap bekerja
 require __DIR__ . '/auth.php';

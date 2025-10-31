@@ -16,7 +16,7 @@
             <form action="{{ route('users.store') }}" method="POST" class="space-y-5">
                 @csrf
 
-                @if(request('tipe') == 'admin')
+                @if (request('tipe') == 'admin')
                     {{-- Admin --}}
                     <div>
                         <label for="nama_admin" class="block text-sm font-medium text-gray-700 mb-1">Nama Admin</label>
@@ -27,6 +27,18 @@
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    <div>
+                        <label for="tanggal_lahir" class="block text-sm font-medium text-gray-700 mb-1">Tanggal
+                            Lahir</label>
+                        <input type="date" name="tanggal_lahir" id="tanggal_lahir"
+                            class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value="{{ old('tanggal_lahir') }}">
+                        @error('tanggal_lahir')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
 
                     <div>
                         <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
@@ -54,7 +66,8 @@
                             <option value="">-- Pilih Role --</option>
                             <option value="padang" {{ old('role') == 'padang' ? 'selected' : '' }}>Padang</option>
                             <option value="solok" {{ old('role') == 'solok' ? 'selected' : '' }}>Solok</option>
-                            <option value="sawah_lunto" {{ old('role') == 'sawah_lunto' ? 'selected' : '' }}>Sawah Lunto</option>
+                            <option value="sawah_lunto" {{ old('role') == 'sawah_lunto' ? 'selected' : '' }}>Sawah Lunto
+                            </option>
                         </select>
                         @error('role')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -94,11 +107,10 @@
 
                 <div class="flex justify-end gap-3">
                     <a href="{{ route('users.index') }}"
-                       class="px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition">
+                        class="px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition">
                         Batal
                     </a>
-                    <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition">
                         Simpan
                     </button>
                 </div>

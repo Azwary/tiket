@@ -70,6 +70,14 @@
                     class="w-full justify-center py-2 text-sm font-semibold tracking-wide rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     {{ __('Login') }}
                 </x-primary-button>
+                <!-- Tombol Reset Password -->
+                <div class="mt-4 text-center">
+                    <a href="{{ route('admin.password.request') }}" class="text-sm text-indigo-600 hover:underline">
+                        Lupa Password?
+                    </a>
+
+                </div>
+
             </div>
         </form>
     </div>

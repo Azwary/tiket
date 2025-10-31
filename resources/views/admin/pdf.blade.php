@@ -51,8 +51,7 @@
 
     <div class="header-title">
         <p>PT. FIFAFEL TRANS</p>
-        <p>LAPORAN PENJUALAN BULANAN </p>
-        {{-- PERUSAHAAN: FIFAFEL TRANSPORTASI --}}
+        <p>LAPORAN PENJUALAN BULANAN</p>
     </div>
 
     @php
@@ -66,11 +65,12 @@
             Semua rute
         @endif
     </p>
-    <p><strong>Priode:</strong>
-        @if ($bulan)
-            {{ Carbon::parse($bulan)->translatedFormat('F Y') }}
+    <p><strong>Periode:</strong>
+        @if ($dari_tanggal && $sampai_tanggal)
+            {{ Carbon::parse($dari_tanggal)->format('d-m-Y') }} s/d
+            {{ Carbon::parse($sampai_tanggal)->format('d-m-Y') }}
         @else
-            Semua Bulan
+            Semua Periode
         @endif
     </p>
 
@@ -84,40 +84,50 @@
                 <th>Tanggal Keberangkatan</th>
                 <th>Jam Keberangkatan</th>
                 <th>Status Pembayaran</th>
+                <th>Total Pembayaran</th>
             </tr>
         </thead>
         <tbody>
-            @forelse ($data as $i => $pemesanan)
+            @php $totalKeseluruhan = 0; @endphp
+            @forelse ($pemesanans as $i => $pemesanan)
+                @php
+                    $jumlah = optional($pemesanan->pembayaran)->jumlah_pembayaran ?? 0;
+                    $totalKeseluruhan += $jumlah;
+                @endphp
                 <tr>
                     <td>{{ $i + 1 }}</td>
-                    <td>{{ \Carbon\Carbon::parse($pemesanan->tanggal_pemesanan)->format('d-m-Y') }}</td>
+                    <td>{{ Carbon::parse($pemesanan->tanggal_pemesanan)->format('d-m-Y') }}</td>
                     <td>{{ $pemesanan->penumpang->nama_penumpang ?? '-' }}</td>
                     <td>
                         {{ $pemesanan->jadwal->rute->asal ?? '-' }} -
                         {{ $pemesanan->jadwal->rute->tujuan ?? '-' }}
                     </td>
-                    <td>{{ \Carbon\Carbon::parse($pemesanan->tanggal_keberangkatan)->format('d-m-Y') }}</td>
-                    <td>{{ $pemesanan->jadwal->jam_keberangkatan ?? '-' }}</td>
+                    <td>{{ Carbon::parse($pemesanan->tanggal_keberangkatan)->format('d-m-Y') }}</td>
+                    <td>{{ substr($pemesanan->jadwal->jam_keberangkatan ?? '-', 0, 5) }}</td>
                     <td>{{ $pemesanan->pembayaran->status_konfirmasi ?? '-' }}</td>
+                    <td>Rp.{{ number_format($jumlah, 0, ',', '.') }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7">Tidak ada data pemesanan</td>
+                    <td colspan="8">Tidak ada data pemesanan</td>
                 </tr>
             @endforelse
         </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="7">Total Keseluruhan</th>
+                <th>Rp.{{ number_format($totalKeseluruhan, 0, ',', '.') }}</th>
+            </tr>
+        </tfoot>
     </table>
 
     <div class="signature">
         <div class="signature-box">
-            <p>Padang, {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y') }}</p>
+            <p>Padang, {{ Carbon::now()->locale('id')->translatedFormat('d F Y') }}</p>
             <p>Mengetahui,</p>
-            <!-- <p style="margin-bottom: 60px;">Petugas</p> -->
-            <!-- {{-- <img src="{{ public_path('tanda_tangan.png') }}" alt="Tanda Tangan" height="80"> --}} -->
             <br>
             <p>----------------------------</p>
             <p>{{ auth('admin')->user()->nama_admin }} / {{ auth('admin')->user()->role }}</p>
-            <!-- <p>{{ ucfirst(auth('admin')->user()->nama_admin) }}</p> -->
         </div>
     </div>
 

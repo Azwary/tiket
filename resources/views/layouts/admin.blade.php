@@ -99,8 +99,24 @@
                         Laporan
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('users.index') }}"
+                        class="flex items-center gap-2 px-4 py-2 rounded w-full
+                            {{ request()->routeIs('Users.*') ? 'bg-gray-200 font-semibold text-indigo-600' : 'hover:bg-gray-200' }}">
+                        <i data-lucide="user" class="w-5 h-5"></i>
+                        Users
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('supir.index') }}"
+                        class="flex items-center gap-2 px-4 py-2 rounded w-full
+                            {{ request()->routeIs('Users.*') ? 'bg-gray-200 font-semibold text-indigo-600' : 'hover:bg-gray-200' }}">
+                        <i data-lucide="car-taxi-front" class="w-5 h-5"></i>
+                        Supirs
+                    </a>
+                </li>
                 {{-- Cek jika bukan admin --}}
-                @if (Auth::guard('admin')->user()->role == 'umum')
+                {{-- @if (Auth::guard('admin')->user()->role == 'umum')
                     <li>
                         <a href="{{ route('users.index') }}"
                             class="flex items-center gap-2 px-4 py-2 rounded w-full
@@ -109,7 +125,7 @@
                             Users
                         </a>
                     </li>
-                @endif
+                @endif --}}
             </ul>
         </aside>
 
@@ -152,12 +168,12 @@
                 </li>
                 @if (Auth::guard('admin')->user()->role == 'umum')
                     <li>
-                    <a href="{{ route('users.index') }}"
-                        class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 w-full">
-                        <i data-lucide="user" class="w-5 h-5"></i>
-                        Users
-                    </a>
-                </li>
+                        <a href="{{ route('users.index') }}"
+                            class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 w-full">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                            Users
+                        </a>
+                    </li>
                 @endif
             </ul>
         </div>
@@ -246,8 +262,8 @@
                                 <div class="text-sm text-gray-700 group-hover:text-indigo-600 transition">
                                     {{ Auth::guard('admin')->user()->role }}
                                 </div>
-                                <svg class="w-4 h-4 text-gray-700 group-hover:text-indigo-600 transition" fill="none"
-                                    stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 text-gray-700 group-hover:text-indigo-600 transition"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M19 9l-7 7-7-7" />
                                 </svg>
@@ -348,9 +364,7 @@
     <!-- Aktifkan Lucide Icons -->
     <script>
         lucide.createIcons();
-    </script>
-    {{-- notifkasi --}}
-    <script>
+
         function toggleDropdown() {
             document.getElementById('userDropdown').classList.toggle('hidden');
         }
@@ -359,8 +373,13 @@
             document.getElementById('notifDropdown').classList.toggle('hidden');
         }
 
-    @stack('scripts')
+        document.getElementById('mobileSidebarToggle')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('hidden');
+        });
+    </script>
 
+    {{-- Stack untuk script tambahan dari child --}}
+    @stack('scripts')
 </body>
 
 </html>

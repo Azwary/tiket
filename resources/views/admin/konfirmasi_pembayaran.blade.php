@@ -11,9 +11,26 @@
             <div class="grid md:grid-cols-2 gap-6">
                 <div>
                     <h2 class="text-lg font-semibold mb-2">Informasi Penumpang</h2>
-                    <p><span class="font-medium">Nama:</span> {{ $data->pemesanan?->penumpang?->nama_penumpang ?? '-' }}</p>
+                    @php
+                        $penumpangs = $data->pemesanan?->detail_pemesanan ?? collect();
+                    @endphp
                     <p><span class="font-medium">No. Tiket:</span> {{ $data->pemesanan?->id_pemesanan ?? '-' }}</p>
+                    @if ($penumpangs->isNotEmpty())
+                        @foreach ($penumpangs as $index => $detail)
+                            <p>
+                                <span class="font-medium">Nama {{ $index + 1 }}:</span>
+                                {{ $detail->penumpang?->nama_penumpang ?? '-' }}
+                            </p>
+                            {{-- <p>
+                                <span class="font-medium">No. Tiket {{ $index + 1 }}:</span>
+                {{ $detail->id_detail_pemesanan ?? ($data->pemesanan->id_pemesanan ?? '-') }}
+                </p> --}}
+                        @endforeach
+                    @else
+                        <p>-</p>
+                    @endif
                 </div>
+
 
                 <div>
                     <h2 class="text-lg font-semibold mb-2">Waktu Keberangkatan</h2>
@@ -58,19 +75,17 @@
             <div>
                 <h2 class="text-lg font-semibold mb-2">Bukti Pembayaran</h2>
                 @php
-                    $filePath = 'storage/' . $data->pemesanan->id_penumpang . '.jpg';
-                    $filePathPng = 'storage/' . $data->pemesanan->id_penumpang . '.png';
+                    $buktiPath = $data->upload_bukti ?? null; // gunakan field di tabel pembayaran
                 @endphp
                 <div class="flex justify-center">
-                    @if (file_exists(public_path($filePath)))
-                        <img src="{{ asset($filePath) }}" class="w-64 h-auto rounded-lg border" alt="Bukti Pembayaran">
-                    @elseif (file_exists(public_path($filePathPng)))
-                        <img src="{{ asset($filePathPng) }}" class="w-64 h-auto rounded-lg border" alt="Bukti Pembayaran">
+                    @if ($buktiPath && file_exists(public_path($buktiPath)))
+                        <img src="{{ asset($buktiPath) }}" class="w-64 h-auto rounded-lg border" alt="Bukti Pembayaran">
                     @else
                         <p class="text-red-500">Belum ada bukti pembayaran.</p>
                     @endif
                 </div>
             </div>
+
 
             {{-- Tombol Konfirmasi --}}
             <div class="flex justify-center gap-6 pt-4">

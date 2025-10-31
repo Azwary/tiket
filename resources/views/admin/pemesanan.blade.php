@@ -54,15 +54,16 @@
                         <option value="">-- Semua Status --</option>
                         @foreach ($statuses as $status)
                             <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
-                                {{ ucfirst($status) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div> --}}
+            {{ ucfirst($status) }}
+            </option>
+            @endforeach
+            </select>
+    </div> --}}
 
                 <!-- Tombol Filter -->
                 <div class="self-end mb-1">
-                    <button type="submit" class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 shadow transition">
+                    <button type="submit"
+                        class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 shadow transition">
                         Filter
                     </button>
                 </div>
@@ -81,8 +82,11 @@
                             <th class="border px-4 py-2">Tujuan</th>
                             <th class="border px-4 py-2">No Kursi</th>
                             <th class="border px-4 py-2">Tanggal Pemesanan</th>
+                            <th class="border px-4 py-2">Nama Supir</th>
+                            <th class="border px-4 py-2">Nomer Kendaraan</th>
                             <th class="border px-4 py-2">Jam Keberangkatan</th>
                             <th class="border px-4 py-2">Tanggal Keberangkatan</th>
+                            <th class="border px-4 py-2">Total Pembayaran</th>
                             <th class="border px-4 py-2">Aksi</th>
                         </tr>
                     </thead>
@@ -90,15 +94,24 @@
                         @forelse ($pemesanans as $pemesanan)
                             <tr class="hover:bg-gray-50">
                                 <td class="border px-4 py-2 text-center">{{ $loop->iteration }}</td>
-                                <td class="border px-4 py-2">{{ $pemesanan->penumpang->nama_penumpang ?? '-' }}</td>
+                                <td class="border px-4 py-2">
+                                    {{ $pemesanan->detail_pemesanan->pluck('penumpang.nama_penumpang')->join(', ') ?: '-' }}
+                                </td>
+
                                 <td class="border px-4 py-2">{{ $pemesanan->jadwal->rute->asal ?? '-' }}</td>
                                 <td class="border px-4 py-2">{{ $pemesanan->jadwal->rute->tujuan ?? '-' }}</td>
                                 <td class="border px-4 py-2">
                                     {{ $pemesanan->detail_pemesanan->pluck('kursi.no_kursi')->join(', ') ?: '-' }}
                                 </td>
                                 <td class="border px-4 py-2">{{ $pemesanan->tanggal_pemesanan ?? '-' }}</td>
-                                <td class="border px-4 py-2">{{ $pemesanan->jadwal->jam_keberangkatan ?? '-' }}</td>
+                                <td class="border px-4 py-2">{{ $pemesanan->jadwal->supir->nama_supir ?? '-' }}</td>
+                                <td class="border px-4 py-2">{{ $pemesanan->jadwal->kendaraan->plat_nomor ?? '-' }}</td>
+                                <td class="border px-4 py-2">
+                                    {{ substr($pemesanan->jadwal->jam_keberangkatan ?? '-', 0, 5) }}</td>
                                 <td class="border px-4 py-2">{{ $pemesanan->tanggal_keberangkatan ?? '-' }}</td>
+                                <td class="border px-4 py-2">
+                                    Rp.{{ $pembayaran = optional($pemesanan->pembayaran)->jumlah_pembayaran ? number_format(optional($pemesanan->pembayaran)->jumlah_pembayaran, 0, ',', '.') : '-' }}
+                                </td>
                                 <td class="border px-4 py-2 text-center">
                                     <div class="flex items-center justify-center gap-2">
                                         <a href="{{ route('pemesanan.edit', $pemesanan->id_pemesanan) }}"
