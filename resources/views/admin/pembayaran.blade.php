@@ -42,7 +42,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($pembayaran as $index => $item)
+                        {{-- @forelse ($pembayaran as $index => $item) --}}
+                        @forelse ($pembayaran->sortByDesc('created_at')->values() as $index => $item)
                             <tr class="text-center {{ $index % 2 == 0 ? 'bg-white' : 'bg-gray-50' }}">
                                 <td class="px-4 py-2 border">{{ $index + 1 }}</td>
                                 <td class="px-4 py-2 border text-left">
