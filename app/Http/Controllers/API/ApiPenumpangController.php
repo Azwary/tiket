@@ -8,10 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class ApiPenumpangController extends Controller
 {
-    // Ambil data penumpang
     public function show($id)
     {
         $penumpang = Penumpang::find($id);
@@ -25,7 +25,6 @@ class ApiPenumpangController extends Controller
         ]);
     }
 
-    // Ambil semua rute
     public function getRute()
     {
         $rutes = Rute::select('id_rute', 'asal', 'tujuan', 'harga')->get();
@@ -36,11 +35,12 @@ class ApiPenumpangController extends Controller
         ]);
     }
 
-    // Ambil jadwal berdasarkan rute dan tanggal
     public function getJam(Request $request)
     {
+        $this->autoUnlockExpiredSeats();
+
         $id_rute = $request->query('rute');
-        $tanggal = $request->query('tanggal'); // format YYYY-MM-DD
+        $tanggal = $request->query('tanggal');
 
         if (!$id_rute || !$tanggal) {
             return response()->json([
@@ -50,7 +50,6 @@ class ApiPenumpangController extends Controller
             ]);
         }
 
-        // Ambil jadwal dengan relasi supir & kendaraan
         $jadwals = Jadwal::with(['supir', 'kendaraan'])
             ->where('id_rute', $id_rute)
             ->get(['id_jadwal', 'jam_keberangkatan', 'id_supir', 'id_kendaraan']);
@@ -76,42 +75,61 @@ class ApiPenumpangController extends Controller
             ->get()
             ->groupBy('id_jadwal');
 
+        $jadwalIds = $jadwals->pluck('id_jadwal')->toArray();
+        $locks = DB::table('kursi_locks')
+            ->whereIn('id_jadwal', $jadwalIds)
+            ->where('locked_until', '>', now())
+            ->get()
+            ->groupBy('id_jadwal');
 
         $totalKursi = Kursi::count() > 0 ? Kursi::count() : 15;
         $semuaKursi = Kursi::all();
 
-        $jadwals = $jadwals->map(function ($j) use ($kursiTerisiPerJadwal, $totalKursi, $semuaKursi) {
+        $jadwals = $jadwals->map(function ($j) use ($kursiTerisiPerJadwal, $locks, $totalKursi, $semuaKursi) {
             $idJadwal = (int)$j->id_jadwal;
 
-            // Ambil kursi yang terisi
             $terisi = $kursiTerisiPerJadwal->has($idJadwal)
                 ? $kursiTerisiPerJadwal[$idJadwal]->toArray()
                 : [];
 
-            // Hitung bangku tersedia (yang status berhasil)
-            $bangkuTersedia = $totalKursi - count(array_filter($terisi, function ($t) {
+            $locksThis = $locks->has($idJadwal) ? $locks[$idJadwal]->toArray() : [];
+
+            $bookedCount = count(array_filter($terisi, function ($t) {
                 return in_array($t->status_konfirmasi, ['menunggu', 'ditempat', 'berhasil']);
             }));
+            $lockCount = count($locksThis);
+            $bangkuTersedia = $totalKursi - ($bookedCount + $lockCount);
 
-            $kursiStatus = $semuaKursi->map(function ($k) use ($terisi) {
+            $kursiStatus = $semuaKursi->map(function ($k) use ($terisi, $locksThis) {
                 $status = 'kosong'; // default
+                $locked_until = null;
+
                 foreach ($terisi as $booking) {
                     if ($booking->id_kursi == $k->id_kursi) {
-                        if (in_array($booking->status_konfirmasi, ['menunggu', 'ditempat', 'berhasil'])) {
-                            $status = 'disable'; // abu-abu
+                        if (in_array($booking->status_konfirmasi, ['menunggu','ditempat','berhasil'])) {
+                            $status = 'disable'; 
                         } elseif ($booking->status_konfirmasi == 'ditolak') {
                             $status = 'kosong';
                         }
                         break;
                     }
                 }
+
+                foreach ($locksThis as $l) {
+                    if ($l->id_kursi == $k->id_kursi) {
+                        $status = 'disable';
+                        $locked_until = $l->locked_until;
+                        break;
+                    }
+                }
+
                 return [
                     'id_kursi' => $k->id_kursi,
                     'no_kursi' => $k->no_kursi,
-                    'status' => $status
+                    'status' => $status,
+                    'locked_until' => $locked_until,
                 ];
             });
-
 
             return [
                 'id_jadwal' => $j->id_jadwal,
@@ -130,11 +148,98 @@ class ApiPenumpangController extends Controller
         ]);
     }
 
+    public function lockKursiSementara(Request $request)
+    {
+        $request->validate([
+            'id_jadwal' => 'required|integer|exists:jadwal,id_jadwal',
+            'kursi' => 'required|array|min:1',
+            'kursi.*' => 'integer', 
+        ]);
 
+        try {
+            Log::info('Lock request masuk', $request->all());
+            $now = Carbon::now();
+            $lockedUntil = $now->copy()->addMinutes(15);
+
+            $noKursiArray = $request->kursi;
+            $kursiRecords = Kursi::whereIn('no_kursi', $noKursiArray)->get()->keyBy('no_kursi');
+
+            DB::beginTransaction();
+
+            foreach ($noKursiArray as $noK) {
+                if (!isset($kursiRecords[$noK])) {
+                    Log::warning("Nomor kursi tidak ditemukan: $noK");
+                    continue;
+                }
+                $idKursi = $kursiRecords[$noK]->id_kursi;
+
+                DB::table('kursi_locks')->updateOrInsert(
+                    [
+                        'id_jadwal' => $request->id_jadwal,
+                        'id_kursi' => $idKursi,
+                    ],
+                    [
+                        'locked_until' => $lockedUntil->toDateTimeString(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]
+                );
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Kursi dikunci sementara selama 15 menit.',
+                'locked_until' => $lockedUntil->toDateTimeString(),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lock kursi error: ' . $e->getMessage());
+            return response()->json(['status' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function unlockKursiOtomatis(Request $request)
+    {
+        $request->validate([
+            'id_jadwal' => 'required|integer|exists:jadwal,id_jadwal',
+            'kursi' => 'nullable|array',
+        ]);
+
+
+        $query = DB::table('kursi_locks')->where('id_jadwal', $request->id_jadwal);
+
+        if ($request->has('kursi')) {
+            $noKursi = $request->kursi;
+            $ids = Kursi::whereIn('no_kursi', $noKursi)->pluck('id_kursi')->toArray();
+            if (!empty($ids)) {
+                $query->whereIn('id_kursi', $ids);
+            } else {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Tidak ada kursi yang dilepas.',
+                ]);
+            }
+        }
+
+        $deleted = $query->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => $deleted > 0
+                ? 'Kursi berhasil dilepas.'
+                : 'Tidak ada kursi yang dilepas.',
+        ]);
+    }
+
+    private function autoUnlockExpiredSeats()
+    {
+        DB::table('kursi_locks')->where('locked_until', '<', now())->delete();
+    }
 
     public function store(Request $request)
     {
-        // Validasi request
         $validated = $request->validate([
             'id_penumpang' => 'required|exists:penumpang,id',
             'id_jadwal' => 'required|exists:jadwal,id_jadwal',
@@ -142,7 +247,7 @@ class ApiPenumpangController extends Controller
             'nama' => 'required|array|min:1',
             'nama.*' => 'string|max:255',
             'kursi' => 'required|array|min:1',
-            'kursi.*' => 'exists:kursi,id_kursi',
+            'kursi.*' => 'integer', 
             'file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
@@ -151,7 +256,6 @@ class ApiPenumpangController extends Controller
             $jadwal = Jadwal::with('rute')->findOrFail($validated['id_jadwal']);
             $harga = $jadwal->rute->harga ?? 0;
 
-            // Buat pemesanan
             $pemesanan = Pemesanan::create([
                 'id_penumpang' => $validated['id_penumpang'],
                 'id_jadwal' => $jadwal->id_jadwal,
@@ -160,31 +264,36 @@ class ApiPenumpangController extends Controller
             ]);
 
             $totalBayar = 0;
+            $kursiNoList = $validated['kursi'];
+            $kursiMap = Kursi::whereIn('no_kursi', $kursiNoList)->get()->keyBy('no_kursi');
 
-            // Detail pemesanan (nama per penumpang)
             foreach ($validated['nama'] as $index => $nama) {
-                $idKursi = $validated['kursi'][$index] ?? null;
-                if (!$idKursi) continue;
+                $noKursi = $validated['kursi'][$index] ?? null;
+                if (!$noKursi) continue;
 
-                // 1️⃣ Buat data penumpang baru
+                $kursiRecord = $kursiMap[$noKursi] ?? null;
+                if (!$kursiRecord) {
+                    continue;
+                }
+                $idKursi = $kursiRecord->id_kursi;
+
                 $penumpang = Penumpang::create([
                     'nama_penumpang' => $nama,
-                    // jika perlu, bisa tambahkan field lain seperti 'no_telepon', 'email' dsb
                 ]);
 
-                // 2️⃣ Simpan detail pemesanan
                 DetailPemesanan::create([
                     'id_pemesanan' => $pemesanan->id_pemesanan,
-                    'id_penumpang' => $penumpang->id, // <-- gunakan id penumpang baru
+                    'id_penumpang' => $penumpang->id,
                     'id_kursi' => $idKursi,
-                    'nama_penumpang' => $nama, // optional, supaya tetap ada di detail
+                    'nama_penumpang' => $nama,
                 ]);
 
                 $totalBayar += $harga;
+                DB::table('kursi_locks')->where('id_jadwal', $validated['id_jadwal'])
+                    ->where('id_kursi', $idKursi)
+                    ->delete();
             }
 
-
-            // Buat pembayaran
             $pembayaran = Pembayaran::create([
                 'id_pemesanan' => $pemesanan->id_pemesanan,
                 'jumlah_pembayaran' => $totalBayar,
@@ -192,7 +301,6 @@ class ApiPenumpangController extends Controller
                 'status_konfirmasi' => 'menunggu',
             ]);
 
-            // Upload bukti pembayaran
             if ($request->hasFile('file')) {
                 $file = $request->file('file');
                 $filename = 'bukti_' . $pemesanan->id_pemesanan . '_' . time() . '.' . $file->getClientOriginalExtension();
@@ -226,10 +334,8 @@ class ApiPenumpangController extends Controller
         }
     }
 
-
     public function getTiketPenumpang($id_penumpang)
     {
-        // Ambil pemesanan milik penumpang tertentu
         $pemesanan = Pemesanan::with(['detail_pemesanan.kursi', 'detail_pemesanan.penumpang', 'pembayaran', 'jadwal.rute'])
             ->where('id_penumpang', $id_penumpang)
             ->get();

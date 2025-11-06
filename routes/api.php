@@ -35,6 +35,9 @@ Route::get('/jadwal', [ApiPenumpangController::class, 'getJam']);
 Route::post('/pemesanan', [ApiPenumpangController::class, 'store']);
 Route::get('tiket/{id_penumpang}', [ApiPenumpangController::class, 'getTiketPenumpang']);
 
+//kunci kursi
+Route::post('/lock-kursi', [ApiPenumpangController::class, 'lockKursiSementara']);
+Route::post('/unlock-kursi', [ApiPenumpangController::class, 'unlockKursiOtomatis']);
 
 Route::prefix('petugas')->group(function () {
     Route::get('/rute', [ApiPetugasController::class, 'getRute']);
